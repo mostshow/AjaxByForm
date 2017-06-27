@@ -1,7 +1,6 @@
 # AjaxByForm
 [![npm](https://img.shields.io/badge/npm-v0.1.1-blue.svg)](https://www.npmjs.com/package/log-reporter)
 
-```
 
 ## Usage
 
