@@ -1,92 +1,102 @@
 
+
 var SubmitByIframe = function(options) {
-
-    this.options = options;
-    this.url = options.url;
-    this.blankUrl = options.blankUrl || 'blank.html';
-    this.type = options.type || 'POST';
-    this.formId = options.formId;
-    this.form = options.form;
-    this.iframeId = options.iframeId || 'hidden_iframe';
-    this.iframeName = options.iframeName || 'hidden_iframe';
-    this.success = options.success;
-    this.error = options.error;
-
+    this.init(options);
 }
 
 SubmitByIframe.prototype = {
-    init: function() {
+
+    init: function(options) {
+        this._setOptions(options); 
+        this.createIframe();
+        this.createForm();
+        this.submit();
+    },
+    createIframe : function(){
         var self = this;
-        var iframeStr = '<iframe id="' + self.iframeName + '" name="' + self.iframeName + '" src="' + self.blankUrl + '" style="display:none"></iframe>';
-    	var formStr = '<form id="'+ self.form +'" method="'+ self.type +'" target="'+ self.iframeName +'"> </form>'        
-        $('body').append(iframeStr);
-        $('body').append(formStr);
-        self.$form = $(self.formId);
-        self.$iframe = $(self.iframeId);
-        self.$form.html(self.createInput());
 
+        if ($(self.options.iframeName).length == 0) {
+            var iframeStr = '<iframe id="' + self.options.iframeName + '" name="' + self.options.iframeName + '"  style="display:none"></iframe>';
+            $('body').append(iframeStr);
+        }
+        self.$iframe = $(self.options.iframeId);
     },
 
-	createInput: function(data) {
-		var inputStr = "";
-		for (var key in data) {
-			 inputStr += '<input name="'+key+'" value="'+data[key]+'" type="hidden"></input>';
-		}		
+    createForm : function(){
+        var self = this;
 
-		return inputStr;
-	},
-
-    getUrlValue: function(str){
-        if (str.search(/#/)>0){
-            str = str.slice(0,str.search(/#/));
+        if ($(self.options.iframeName).length == 0) {
+            var formStr = '<form id="'+ self.options.form +'" method="'+ self.options.type +'" target="'+ self.options.iframeName +'"> </form>'        
+            $('body').append(formStr);
         }
-        var obj = {};
-        if (str.search(/\?/)<0){
-            return obj;
-        }
-        var arr = str.slice(str.search(/\?/)+1).split('&');
-        for(var i=0,j=arr.length; i<j; i++){
-            var tmp = arr[i].split('=');
-            obj[tmp[0]] = tmp[1];
-        }
-        return obj;
+        self.$form = $(self.options.formId);
+        self.$form.html(self.createInput());        
     },
 
+    _setOptions : function(options){
+        this.options = {
+            url: "", 
+            blankUrl: 'blank.html',
+            formId: '#login_form',
+            form: 'login_form',
+            type: 'POST',
+            iframeId: '#login_iframe',
+            iframeName: 'login_iframe', 
+        };
+        return $.extend(this.options,options || {});
+
+    },    
+
+    createInput: function() {
+        var inputStr = "", data = this.options.data;
+        for (var key in data) {
+             inputStr += '<input name="'+key+'" value="'+data[key]+'" type="hidden"></input>';
+        }       
+
+        return inputStr;
+    },
     bindSubmit: function() {
         var self = this;
         self.$iframe.unbind('load').unbind('errorupdate');
         self.$iframe.on('load', function() {
-        	console.log(1111)
+
             try{
-                var res = self.getUrlValue(self.$iframe.prop('contentWindow').location.href);
-                if(res) {
-                    self.success && self.success(res);
-                } else {
-                    self.error && self.error();
+
+                var res = self.$iframe.prop('contentWindow').response;
+
+
+                if(res){
+                    if($.isFunction(self.options.success)){
+                        self.options.success(res);
+                    }
+                    return;
                 }
+
+                if($.isFunction(self.options.error)){
+                    self.options.error(res);
+                }
+
             }catch(err){
-                self.error && self.error();
+                 self.error && self.error({});
             }
         })
-        .on('errorupdate', self.iframeId, function() {
-            self.error && self.error();
+        .on('errorupdate', function() {
+                if($.isFunction(self.options.error)){
+                    self.options.error({msg:"error"});
+                }
         });
     },
 
     submit: function() {
         this.bindSubmit();
-        this.$form.attr('action', this.url).submit();
-    },
-
-    render: function() {
-        this.init();
+        this.$form.attr('action', this.options.url).submit();
     }
 };
 
 SubmitByIframe.create = function(options) {
+
     var formSubmit = new SubmitByIframe(options);
-    formSubmit.render();
-    formSubmit.submit()
 };
 
 module.exports = SubmitByIframe;
+
