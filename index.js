@@ -37,11 +37,11 @@ SubmitByIframe.prototype = {
         this.options = {
             url: "", 
             blankUrl: 'blank.html',
-            formId: '#login_form',
-            form: 'login_form',
+            formId: '#example_form',
+            form: 'example_form',
             type: 'POST',
-            iframeId: '#login_iframe',
-            iframeName: 'login_iframe', 
+            iframeId: '#example_iframe',
+            iframeName: 'example_iframe', 
         };
         return $.extend(this.options,options || {});
 
@@ -62,6 +62,7 @@ SubmitByIframe.prototype = {
 
             try{
 
+		//$iframe :document.domain = "example.com";
                 var res = self.$iframe.prop('contentWindow').response;
 
 
